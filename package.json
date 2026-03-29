@@ -1,0 +1,34 @@
+{
+  "name": "wanderlust",
+  "version": "1.0.0",
+  "description": "Hotel listing webstite . Showing fundamentals of Webdev.",
+  "keywords": [
+    "express",
+    "restfulAPIs",
+    "Javascript",
+    "Css"
+  ],
+  "homepage": "https://github.com/Nandini-55/mini-projects-vault#readme",
+  "bugs": {
+    "url": "https://github.com/Nandini-55/mini-projects-vault/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nandini-55/mini-projects-vault.git"
+  },
+  "license": "ISC",
+  "author": "Nandini Gupta",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "test": "nodemon app.js"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "ejs-mate": "^4.0.0",
+    "express": "^5.2.1",
+    "joi": "^18.0.2",
+    "method-override": "^3.0.0",
+    "mongoose": "^9.0.2"
+  }
+}
