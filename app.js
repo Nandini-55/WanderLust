@@ -8,7 +8,8 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate"); //helps in creating templates - common in all webpages
 const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressError.js");
-const { listingSchema } = require("./schema.js");
+const { listingSchema, reviewSchema } = require("./schema.js"); //imported to varify listings' schema using joi-works as a middleware
+const Review = require("./model/review.js");
 
 main()
   .then(() => {
@@ -31,9 +32,22 @@ app.get("/", (req, res) => {
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "/public")));
 
+//validates listing schema - middleware function
 const validateListing = (req, res, next) => {
   //middleware using joi to validate schema
   let { error } = listingSchema.validate(req.body);
+  if (error) {
+    let errMsg = error.details.map((el) => el.message).join(",");
+    throw new ExpressError(400, errMsg);
+  } else {
+    next();
+  }
+};
+
+//validates review schema - middleware function
+const validateReview = (req, res, next) => {
+  //middleware using joi to validate schema
+  let { error } = reviewSchema.validate(req.body);
   if (error) {
     let errMsg = error.details.map((el) => el.message).join(",");
     throw new ExpressError(400, errMsg);
@@ -60,7 +74,7 @@ app.get(
   "/listings/:id",
   wrapAsync(async (req, res) => {
     let { id } = req.params;
-    const listing = await Listing.findById(id);
+    const listing = await Listing.findById(id).populate("reviews");
     res.render("listings/show.ejs", { listing });
   }),
 );
@@ -77,9 +91,9 @@ app.get(
 //Create route
 app.post(
   "/listings",
-  validateListing,
+  validateListing, //middleware - helps to validate the schema of listing
   wrapAsync(async (req, res) => {
-    // let { title, description, image, price, location, country } = req.body;// one way if the name of the input is just ike these but to keep it simple , use listing[key] in new.ejs
+    // let { title, description, image, price, location, country } = req.body;// one way if the name of the input is just like these but to keep it simple , use listing[key] in new.ejs
 
     // if (!req.body.listing) {
     //   throw new ExpressError(400, "Send valid data for listing "); //400 - represents clients mistake
@@ -114,6 +128,37 @@ app.delete(
     res.redirect(`/listings`);
   }),
 );
+
+//Reviews: doesn't require index and show route as reviews are part of listings
+
+//Add Review route
+app.post(
+  "/listings/:id/reviews",
+  validateReview,
+  wrapAsync(async (req, res) => {
+    let listing = await Listing.findById(req.params.id);
+    let newReview = new Review(req.body.review);
+
+    listing.reviews.push(newReview);
+
+    await newReview.save();
+    await listing.save();
+    res.redirect(`/listings/${listing._id}`);
+  }),
+);
+
+//Delete review route
+app.delete(
+  "/listings/:id/reviews/:reviewId",
+  wrapAsync(async (req, res) => {
+    let { id, reviewId } = req.params;
+    await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
+    await Review.findByIdAndDelete(reviewId);
+
+    res.redirect(`/listings/${id}`);
+  }),
+);
+
 //testing route
 // app.get("/testListing", async (req, res) => {
 //   let sampleListing = new Listing({
