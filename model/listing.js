@@ -17,10 +17,10 @@ const listingSchema = new Schema({
     url: {
       type: String,
       default:
-        "https://unsplash.com/photos/a-white-house-with-a-porch-and-a-balcony-FGwmU5tfwZw",
+        "https://images.unsplash.com/photo-1631821938164-9383abac340c?q=80&w=465&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       set: (v) =>
         v === ""
-          ? "https://unsplash.com/photos/a-white-house-with-a-porch-and-a-balcony-FGwmU5tfwZw"
+          ? "https://images.unsplash.com/photo-1631821938164-9383abac340c?q=80&w=465&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
           : v,
     },
   },
@@ -40,7 +40,7 @@ const listingSchema = new Schema({
     },
   ],
 });
-listingSchema.post("findOneAndDelete", async () => {
+listingSchema.post("findOneAndDelete", async (listing) => {
   if (listing) {
     await Review.deleteMany({ _id: { $in: listing.reviews } });
   }

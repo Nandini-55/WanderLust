@@ -21,7 +21,8 @@
 <body>
     <%- include("../includes/navbar.ejs") %>
         <div class="container">
-            <%-body%> <!--this will help to make the layout and used in other pages to not to repeat the code-->
+            <%- include("../includes/flash.ejs") %>
+                <%-body%> <!--this will help to make the layout and used in other pages to not to repeat the code-->
         </div>
         <%- include("../includes/footer.ejs") %>
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
