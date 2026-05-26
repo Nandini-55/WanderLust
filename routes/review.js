@@ -4,32 +4,20 @@ const router = express.Router({ mergeParams: true });
 //e.g- before path  of following route : /listings/:id/reviews -- now the following routes can only be able to access the path after these details : but we require listings'id to access the Listings to add review in it - therefore , to have the access of paramter (like- :id) we have to use - { mergeParams: true }
 const ExpressError = require("../utils/ExpressError.js");
 const wrapAsync = require("../utils/wrapAsync.js");
-
 const Listing = require("../model/listing.js");
-const { reviewSchema } = require("../schema.js"); //imported to varify listings' schema using joi-works as a middlewa
 const Review = require("../model/review.js");
+const {validateReview, isLoggedIn, isReviewAuthor} = require("../middleware.js");
 
 //Reviews: doesn't require index and show route as reviews are part of listings
-//validates review schema - middleware function
-const validateReview = (req, res, next) => {
-  //middleware using joi to validate schema
-  let { error } = reviewSchema.validate(req.body);
-  if (error) {
-    let errMsg = error.details.map((el) => el.message).join(",");
-    throw new ExpressError(400, errMsg);
-  } else {
-    next();
-  }
-};
 
 //Add Review route
 router.post(
-  "/",
+  "/",isLoggedIn,
   validateReview,
   wrapAsync(async (req, res) => {
     let listing = await Listing.findById(req.params.id);
     let newReview = new Review(req.body.review);
-
+    newReview.author = req.user._id;
     listing.reviews.push(newReview);
 
     await newReview.save();
@@ -41,7 +29,7 @@ router.post(
 
 //Delete review route
 router.delete(
-  "/:reviewId",
+  "/:reviewId",isLoggedIn,isReviewAuthor, 
   wrapAsync(async (req, res) => {
     let { id, reviewId } = req.params;
     await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });

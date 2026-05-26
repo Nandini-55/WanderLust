@@ -3,20 +3,7 @@ const router = express.Router();
 const Listing = require("../model/listing.js");
 const ExpressError = require("../utils/ExpressError.js");
 const wrapAsync = require("../utils/wrapAsync.js");
-const { listingSchema } = require("../schema.js"); //imported to varify listings' schema using joi-works as a middleware
-const { isLoggedIn } = require("../middleware.js");
-
-//validates listing schema - middleware function
-const validateListing = (req, res, next) => {
-  //middleware using joi to validate schema
-  let { error } = listingSchema.validate(req.body);
-  if (error) {
-    let errMsg = error.details.map((el) => el.message).join(",");
-    throw new ExpressError(400, errMsg);
-  } else {
-    next();
-  }
-};
+const { isLoggedIn, isOwner, validateListing } = require("../middleware.js");
 
 //Index route
 router.get(
@@ -38,7 +25,7 @@ router.get(
   wrapAsync(async (req, res) => {
     let { id } = req.params;
     const listing = await Listing.findById(id)
-      .populate("reviews")
+      .populate({ path: "reviews", populate: { path: "author" } })//populate with review and populate each review with its author
       .populate("owner");
     if (!listing) {
       req.flash("error", "Listing you requested does not exist!");
@@ -52,6 +39,7 @@ router.get(
 router.get(
   "/:id/edit",
   isLoggedIn,
+  isOwner,
   wrapAsync(async (req, res) => {
     let { id } = req.params;
     const listing = await Listing.findById(id);
@@ -87,6 +75,7 @@ router.post(
 router.put(
   "/:id",
   isLoggedIn,
+  isOwner,
   validateListing,
   wrapAsync(async (req, res) => {
     // if (!req.body.listing) {
@@ -103,6 +92,7 @@ router.put(
 router.delete(
   "/:id",
   isLoggedIn,
+  isOwner,
   wrapAsync(async (req, res) => {
     let { id } = req.params;
     await Listing.findByIdAndDelete(id);
