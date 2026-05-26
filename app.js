@@ -53,9 +53,10 @@ passport.use(new LocalStrategy(User.authenticate())); //Ensure all users are aut
 passport.serializeUser(User.serializeUser()); //The store of the session
 passport.deserializeUser(User.deserializeUser()); //Remove user from session
 
-app.use((req, res, next) => {
+app.use((req, res, next) => {//stores properties to let the ejs template access them
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
+  res.locals.currUser = req.user;//stores the user property of request body in locals
   next();
 });
 

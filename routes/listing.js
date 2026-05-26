@@ -4,6 +4,7 @@ const Listing = require("../model/listing.js");
 const ExpressError = require("../utils/ExpressError.js");
 const wrapAsync = require("../utils/wrapAsync.js");
 const { listingSchema } = require("../schema.js"); //imported to varify listings' schema using joi-works as a middleware
+const { isLoggedIn } = require("../middleware.js");
 
 //validates listing schema - middleware function
 const validateListing = (req, res, next) => {
@@ -25,8 +26,9 @@ router.get(
     res.render("listings/index.ejs", { allListing });
   }),
 );
+
 //new route-- this route must be before than the show one , else 'new' word would be considered as _id and will throw error
-router.get("/new", (req, res) => {
+router.get("/new", isLoggedIn, (req, res) => {
   res.render("listings/new.ejs");
 });
 
@@ -35,7 +37,9 @@ router.get(
   "/:id",
   wrapAsync(async (req, res) => {
     let { id } = req.params;
-    const listing = await Listing.findById(id).populate("reviews");
+    const listing = await Listing.findById(id)
+      .populate("reviews")
+      .populate("owner");
     if (!listing) {
       req.flash("error", "Listing you requested does not exist!");
       res.redirect("/listings");
@@ -47,6 +51,7 @@ router.get(
 //Edit route
 router.get(
   "/:id/edit",
+  isLoggedIn,
   wrapAsync(async (req, res) => {
     let { id } = req.params;
     const listing = await Listing.findById(id);
@@ -71,6 +76,7 @@ router.post(
     // }-- replaced by joi 😎
 
     const newListing = new Listing(req.body.listing);
+    newListing.owner = req.user._id;
     await newListing.save();
     req.flash("success", "New Listing Created!");
     res.redirect("/listings");
@@ -80,6 +86,7 @@ router.post(
 //Update route
 router.put(
   "/:id",
+  isLoggedIn,
   validateListing,
   wrapAsync(async (req, res) => {
     // if (!req.body.listing) {
@@ -95,6 +102,7 @@ router.put(
 //Delete route
 router.delete(
   "/:id",
+  isLoggedIn,
   wrapAsync(async (req, res) => {
     let { id } = req.params;
     await Listing.findByIdAndDelete(id);
