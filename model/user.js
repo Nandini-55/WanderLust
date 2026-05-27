@@ -5,6 +5,7 @@ const userSchema = new Schema({
   email: {
     type: String,
     required: true,
+    unique: true
   },
 });
 userSchema.plugin(passportLocalMongoose); // this will add username , hash value and salt feild in db by default
