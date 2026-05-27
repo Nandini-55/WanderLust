@@ -4,71 +4,29 @@ const Listing = require("../model/listing.js");
 const ExpressError = require("../utils/ExpressError.js");
 const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn, isOwner, validateListing } = require("../middleware.js");
+const listingController = require("../controllers/listings.js");
 
 //Index route
-router.get(
-  "/",
-  wrapAsync(async (req, res) => {
-    const allListing = await Listing.find({});
-    res.render("listings/index.ejs", { allListing });
-  }),
-);
+router.get("/", wrapAsync(listingController.index));
 
 //new route-- this route must be before than the show one , else 'new' word would be considered as _id and will throw error
-router.get("/new", isLoggedIn, (req, res) => {
-  res.render("listings/new.ejs");
-});
+router.get("/new", isLoggedIn, listingController.renderNewForm);
 
 //Show route
-router.get(
-  "/:id",
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    const listing = await Listing.findById(id)
-      .populate({ path: "reviews", populate: { path: "author" } })//populate with review and populate each review with its author
-      .populate("owner");
-    if (!listing) {
-      req.flash("error", "Listing you requested does not exist!");
-      res.redirect("/listings");
-    } else {
-      res.render("listings/show.ejs", { listing });
-    }
-  }),
-);
+router.get("/:id", wrapAsync(listingController.showListing));
 //Edit route
 router.get(
   "/:id/edit",
   isLoggedIn,
   isOwner,
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    const listing = await Listing.findById(id);
-    if (!listing) {
-      req.flash("error", "Listing you requested does not exist!");
-      res.redirect("/listings");
-    } else {
-      res.render("listings/edit.ejs", { listing });
-    }
-  }),
+  wrapAsync(listingController.renderEditForm),
 );
 
 //Create route
 router.post(
   "/",
   validateListing, //middleware - helps to validate the schema of listing
-  wrapAsync(async (req, res) => {
-    // let { title, description, image, price, location, country } = req.body;// one way if the name of the input is just like these but to keep it simple , use listing[key] in new.ejs
-
-    // if (!req.body.listing) {
-    //   throw new ExpressError(400, "Send valid data for listing "); //400 - represents clients mistake
-    // }-- replaced by joi 😎
-
-    const newListing = new Listing(req.body.listing);
-    newListing.owner = req.user._id;
-    await newListing.save();
-    req.flash("success", "New Listing Created!");
-    res.redirect("/listings");
-  }),
+  wrapAsync(listingController.createListing),
 );
 
 //Update route
@@ -77,15 +35,7 @@ router.put(
   isLoggedIn,
   isOwner,
   validateListing,
-  wrapAsync(async (req, res) => {
-    // if (!req.body.listing) {
-    //   throw new ExpressError(400, "Send valid data for listing "); //400 - represents clients mistake
-    // }-- replaced by joi 😎 in middleware |-:"validateListing"
-    let { id } = req.params;
-    await Listing.findByIdAndUpdate(id, { ...req.body.listing });
-    req.flash("success", "Listing Updated!");
-    res.redirect(`/listings/${id}`);
-  }),
+  wrapAsync(listingController.updateListing),
 );
 
 //Delete route
@@ -93,12 +43,7 @@ router.delete(
   "/:id",
   isLoggedIn,
   isOwner,
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    await Listing.findByIdAndDelete(id);
-    req.flash("success", "Listing Deleted!");
-    res.redirect("/listings");
-  }),
+  wrapAsync(listingController.destroyListing),
 );
 
 //testing route
