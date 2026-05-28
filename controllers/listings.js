@@ -22,18 +22,28 @@ module.exports.showListing = async (req, res) => {
   }
 };
 
-module.exports.createListing = async (req, res) => {
+module.exports.createListing = async (req, res, next) => {
   // let { title, description, image, price, location, country } = req.body;// one way if the name of the input is just like these but to keep it simple , use listing[key] in new.ejs
 
   // if (!req.body.listing) {
   //   throw new ExpressError(400, "Send valid data for listing "); //400 - represents clients mistake
   // }-- replaced by joi 😎
-
-  const newListing = new Listing(req.body.listing);
-  newListing.owner = req.user._id;
-  await newListing.save();
-  req.flash("success", "New Listing Created!");
-  res.redirect("/listings");
+  try {
+    const newListing = new Listing(req.body.listing);
+    newListing.owner = req.user._id;
+    await newListing.save();
+    req.flash("success", "New Listing Created!");
+    return res.redirect("/listings");
+  } catch (err) {
+    if (err.code === 11000) {
+      req.flash(
+        "error",
+        "A listing with that title already exists. Please choose a unique name!",
+      );
+      return res.redirect("/listings/new"); // Redirects back to the creation form
+    }
+  }
+  next(err);
 };
 
 module.exports.renderEditForm = async (req, res) => {

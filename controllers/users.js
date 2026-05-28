@@ -21,7 +21,17 @@ module.exports.signup = async (req, res) => {
       res.redirect("/listings");
     }); //inbuilt method of passport to make user login with the help of credentials - user gets assigned to req.user , another parameter is a call back function to handle error
   } catch (err) {
-    req.flash("error", err.message);
+    // 1. Handle the unique database index restriction (Emails)
+    if (err.code === 11000) {
+      req.flash(
+        "error",
+        "A user with that email address is already registered.",
+      );
+    }
+    // 2. Dynamically catches ALL other constraints (age, role, password requirements, etc.)
+    else {
+      req.flash("error", err.message);
+    }
     res.redirect("/signup");
   }
 };
