@@ -1,4 +1,6 @@
 const Listing = require("../model/listing");
+const maptiler = require("@maptiler/client");
+maptiler.config.apiKey = process.env.MAP_TOKEN;
 
 module.exports.index = async (req, res) => {
   const allListing = await Listing.find({});
@@ -29,9 +31,18 @@ module.exports.createListing = async (req, res, next) => {
   //   throw new ExpressError(400, "Send valid data for listing "); //400 - represents clients mistake
   // }-- replaced by joi 😎
   try {
+    let url = req.file.path;
+    let filename = req.file.filename;
+    // console.log(url, "..", filename);
+    //map coordiantes:
+    const result = await maptiler.geocoding.forward(req.body.listing.location);
+    // console.log(result.features[0].geometry);
     const newListing = new Listing(req.body.listing);
     newListing.owner = req.user._id;
-    await newListing.save();
+    newListing.image = { url, filename };
+    newListing.geometry = result.features[0].geometry;
+    let savedListing = await newListing.save();
+    console.log(savedListing);
     req.flash("success", "New Listing Created!");
     return res.redirect("/listings");
   } catch (err) {
@@ -43,7 +54,6 @@ module.exports.createListing = async (req, res, next) => {
       return res.redirect("/listings/new"); // Redirects back to the creation form
     }
   }
-  next(err);
 };
 
 module.exports.renderEditForm = async (req, res) => {
@@ -51,10 +61,12 @@ module.exports.renderEditForm = async (req, res) => {
   const listing = await Listing.findById(id);
   if (!listing) {
     req.flash("error", "Listing you requested does not exist!");
-    res.redirect("/listings");
-  } else {
-    res.render("listings/edit.ejs", { listing });
+    return res.redirect("/listings");
   }
+  let originalImageUrl = listing.image.url;
+
+  originalImageUrl = originalImageUrl.replace("/upload", "/upload/w_250"); //decrease pixel size for preview to reduce render time
+  res.render("listings/edit.ejs", { listing, originalImageUrl });
 };
 
 module.exports.destroyListing = async (req, res) => {
@@ -69,7 +81,14 @@ module.exports.updateListing = async (req, res) => {
   //   throw new ExpressError(400, "Send valid data for listing "); //400 - represents clients mistake
   // }-- replaced by joi 😎 in middleware |-:"validateListing"
   let { id } = req.params;
-  await Listing.findByIdAndUpdate(id, { ...req.body.listing });
+  let listing = await Listing.findByIdAndUpdate(id, { ...req.body.listing });
+  if (typeof req.file !== "undefined") {
+    //if no image is uploaded - req.file=undefined = false
+    let url = req.file.path;
+    let filename = req.file.filename;
+    listing.image = { url, filename };
+    await listing.save();
+  }
   req.flash("success", "Listing Updated!");
   res.redirect(`/listings/${id}`);
 };

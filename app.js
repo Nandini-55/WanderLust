@@ -1,3 +1,7 @@
+if (process.env.NODE_ENV != "production") {
+  require("dotenv").config();
+}
+
 const express = require("express");
 const mongoose = require("mongoose");
 const app = express();
@@ -53,32 +57,29 @@ passport.use(new LocalStrategy(User.authenticate())); //Ensure all users are aut
 passport.serializeUser(User.serializeUser()); //The store of the session
 passport.deserializeUser(User.deserializeUser()); //Remove user from session
 
-app.use((req, res, next) => {//stores properties to let the ejs template access them
+app.use((req, res, next) => {
+  //stores properties to let the ejs template access them
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
-  res.locals.currUser = req.user;//stores the user property of request body in locals
+  res.locals.currUser = req.user; //stores the user property of request body in locals
   next();
 });
 
-app.get("/demouser", async (req, res) => {
-  let fakeUser = new User({
-    email: "student@gmail.com",
-    username: "student101",
-  });
+// app.get("/demouser", async (req, res) => {
+//   let fakeUser = new User({
+//     email: "student@gmail.com",
+//     username: "student101",
+//   });
 
-  let registeredUser = await User.register(fakeUser, "helloworld"); // Register method can take three parameters as input: User Details, Password and Callback(optional) And store them in the database.
-  res.send(registeredUser);
-});
-
-app.get("/", (req, res) => {
-  res.redirect("/listings");
-});
+//   let registeredUser = await User.register(fakeUser, "helloworld"); // Register method can take three parameters as input: User Details, Password and Callback(optional) And store them in the database.
+//   res.send(registeredUser);
+// });
 
 app.use("/listings", listingRouter);
 
 app.use("/listings/:id/reviews", reviewRouter);
 
-app.use("/",userRouter);
+app.use("/", userRouter);
 
 //page not found route - not an appropriate route
 //used "/*splat" instead of "*" as express v5 doesn't use it as for all routes

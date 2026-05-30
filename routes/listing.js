@@ -6,22 +6,18 @@ const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn, isOwner, validateListing } = require("../middleware.js");
 const listingController = require("../controllers/listings.js");
 const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
+const { storage } = require("../cloudConfig.js");
+const upload = multer({ storage });
 
 // * router.route(path)-  Returns an instance of a single route which you can then use to handle HTTP verbs with optional middleware. Use router. route() to avoid duplicate route naming and thus typing errors.
 
 //Index route (.get) & Create route(.post)
-router
-  .route("/")
-  .get(wrapAsync(listingController.index))
-  // .post(
-  //   isLoggedIn,
-  //   validateListing, //middleware - helps to validate the schema of listing
-  //   wrapAsync(listingController.createListing),
-  // );
-  .post(upload.single("listing[image]"), (req, res) => {
-    res.send(req.file);
-  });
+router.route("/").get(wrapAsync(listingController.index)).post(
+  isLoggedIn,
+  upload.single("listing[image]"),
+  validateListing, //middleware - helps to validate the schema of listing
+  wrapAsync(listingController.createListing),
+);
 
 //new route-- this route must be before than the show one , else 'new' word would be considered as _id and will throw error
 router.get("/new", isLoggedIn, listingController.renderNewForm);
@@ -33,6 +29,7 @@ router
   .put(
     isLoggedIn,
     isOwner,
+    upload.single("listing[image]"),
     validateListing,
     wrapAsync(listingController.updateListing),
   )
