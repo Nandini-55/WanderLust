@@ -1,4 +1,4 @@
-const Listing = require("./model/listing");
+const Listing = require("./model/listing.js");
 const ExpressError = require("./utils/ExpressError.js");
 const { listingSchema, reviewSchema } = require("./schema.js"); //imported to varify listings'and reviews' schema using joi-works as a middleware
 const Review = require("./model/review.js");

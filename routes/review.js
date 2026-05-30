@@ -8,7 +8,7 @@ const {
   validateReview,
   isLoggedIn,
   isReviewAuthor,
-} = require("../middleware.js");
+} = require("../middlewares.js");
 const reviewController = require("../controllers/reviews.js");
 //Reviews: doesn't require index and show route as reviews are part of listings
 
