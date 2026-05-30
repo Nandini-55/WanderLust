@@ -47,7 +47,7 @@ const store = MongoStore.create({
   touchAfter: 24 * 3600, //interval between session updates in seconds - it helps to retian data without updating it when their is no update
 });
 
-store.on("error", () => {
+store.on("error", (err) => {
   console.log("ERROR IN MONGO SESSION STORE ", err);
 });
 
