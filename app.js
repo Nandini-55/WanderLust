@@ -5,7 +5,7 @@ if (process.env.NODE_ENV != "production") {
 const express = require("express");
 const mongoose = require("mongoose");
 const app = express();
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
+const dbUrl = process.env.ATLASDB_URL;
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate"); //helps in creating templates - common in all webpages
@@ -14,6 +14,7 @@ const listingRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
 const session = require("express-session");
+const { MongoStore } = require("connect-mongo");
 const flash = require("connect-flash"); //used to display one time messages
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -27,7 +28,7 @@ main()
     console.log(err);
   });
 async function main() {
-  await mongoose.connect(MONGO_URL);
+  await mongoose.connect(dbUrl);
 }
 
 app.set("view engine", "ejs");
@@ -36,9 +37,23 @@ app.use(express.urlencoded({ extended: true }));
 app.engine("ejs", ejsMate);
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "/public")));
+const store = MongoStore.create({
+  //their will be session collection in database
+  //default session is of 14 days
+  mongoUrl: dbUrl,
+  crypto: {
+    secret: process.env.SECRET,
+  },
+  touchAfter: 24 * 3600, //interval between session updates in seconds - it helps to retian data without updating it when their is no update
+});
+
+store.on("error", () => {
+  console.log("ERROR IN MONGO SESSION STORE ", err);
+});
 
 const sessionOptions = {
-  secret: "mysupersecretstring",
+  store, //as using session storage "MemoryStore"  is not appropriate for production level as it can't handle large data and only is for debugging and development
+  secret: process.env.SECRET,
   resave: false,
   saveUninitialized: true,
   cookie: {
